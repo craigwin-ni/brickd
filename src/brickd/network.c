@@ -107,6 +107,9 @@ static void network_handle_accept(void *opaque) {
 #ifdef BRICKD_WITH_RED_BRICK
 	client_send_red_brick_enumerate(client, ENUMERATION_TYPE_CONNECTED);
 #endif
+#ifdef BRICKD_WITH_DEDICATED
+	client_send_dedicated_enumerate(client, ENUMERATION_TYPE_CONNECTED);
+#endif
 }
 
 static void network_open_server(Array *server_sockets, uint16_t port,
@@ -532,6 +535,24 @@ void network_announce_red_brick_disconnect(void) {
 		client = array_get(&_clients, i);
 
 		client_send_red_brick_enumerate(client, ENUMERATION_TYPE_DISCONNECTED);
+	}
+}
+
+#endif
+
+#ifdef BRICKD_WITH_DEDICATED
+
+void network_announce_dedicated_disconnect(void) {
+	int i;
+	Client *client;
+
+	log_debug("Broadcasting enumerate-disconnected callback for Dedicated processor to %d client(s)",
+	          _clients.count);
+
+	for (i = 0; i < _clients.count; ++i) {
+		client = array_get(&_clients, i);
+
+		client_send_dedicated_enumerate(client, ENUMERATION_TYPE_DISCONNECTED);
 	}
 }
 

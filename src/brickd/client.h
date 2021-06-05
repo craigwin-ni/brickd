@@ -104,4 +104,10 @@ void client_send_red_brick_enumerate(Client *client, EnumerationType type);
 
 #endif
 
+#ifdef BRICKD_WITH_DEDICATED
+
+void client_send_dedicated_enumerate(Client *client, EnumerationType type);
+
+#endif
+
 #endif // BRICKD_CLIENT_H

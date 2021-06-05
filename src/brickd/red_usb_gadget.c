@@ -130,7 +130,12 @@ static int red_usb_gadget_connect(void) {
 	log_debug("Sending enumerate-connected callback for RED Brick to '%s'",
 	          G_RED_BRICK_DATA_FILENAME);
 
+#ifdef BRICKD_WITH_RED_BRICK
 	client_send_red_brick_enumerate(_client, ENUMERATION_TYPE_CONNECTED);
+#endif
+#ifdef BRICKD_WITH_DEDICATED
+	client_send_dedicated_enumerate(_client, ENUMERATION_TYPE_CONNECTED);
+#endif
 
 	return 0;
 }
@@ -201,12 +206,16 @@ int red_usb_gadget_init(void) {
 
 	log_debug("Initializing RED Brick USB gadget subsystem");
 
+#ifdef BRICKD_WITH_DEDICATED
+    _uid = dedicated_uid();
+#else
 	if (red_brick_uid(&_uid) < 0) {
 		log_error("Could not get RED Brick UID: %s (%d)",
 		          get_errno_name(errno), errno);
 
 		goto cleanup;
 	}
+#endif
 
 	log_debug("Using %s (%u) as RED Brick UID",
 	          base58_encode(base58, uint32_from_le(_uid)),
@@ -280,7 +289,23 @@ void red_usb_gadget_announce_red_brick_disconnect(void) {
 	log_debug("Sending enumerate-disconnected callback for RED Brick to '%s'",
 	          G_RED_BRICK_DATA_FILENAME);
 
+#ifdef BRICKD_WITH_RED_BRICK
 	client_send_red_brick_enumerate(_client, ENUMERATION_TYPE_DISCONNECTED);
+#endif
+#ifdef BRICKD_WITH_DEDICATED
+	client_send_dedicated_enumerate(_client, ENUMERATION_TYPE_DISCONNECTED);
+#endif
+}
+
+void red_usb_gadget_announce_dedicated_disconnect(void) {
+	if (_client == NULL) {
+		return;
+	}
+
+	log_debug("Sending enumerate-disconnected callback for Dedicated processor to '%s'",
+	          G_RED_BRICK_DATA_FILENAME);
+
+	client_send_dedicated_enumerate(_client, ENUMERATION_TYPE_DISCONNECTED);
 }
 
 uint32_t red_usb_gadget_get_uid(void) {

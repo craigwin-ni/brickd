@@ -30,6 +30,7 @@ WITH_USB_REOPEN_ON_SIGUSR1 ?= yes
 WITH_PM_UTILS ?= check
 WITH_SYSTEMD ?= check
 WITH_RED_BRICK ?= check
+WITH_DEDICATED ?= no
 WITH_BRICKLET ?= check
 WITH_MESH_SINGLE_ROOT_NODE ?= no
 WITH_UNKNOWN_LIBUSB_API_VERSION ?= no
@@ -108,6 +109,9 @@ endif
 
 ifeq ($(PLATFORM),Linux)
 ifeq ($(WITH_RED_BRICK),check)
+ifneq ($WITH_DEDICATED),no)
+    override WITH_RED_BRICK := no
+else
 ifneq ($(wildcard /proc/red_brick_uid),)
 	# Linux and RED Brick <= 1.9
 	override WITH_RED_BRICK := 9
@@ -125,6 +129,7 @@ else
 	# not Linux, no RED Brick
 	override WITH_RED_BRICK := no
 endif
+endif
 
 ifneq ($(WITH_RED_BRICK),no)
 ifeq ($(WITH_VERSION_SUFFIX),no)
@@ -133,6 +138,16 @@ else
 	override WITH_VERSION_SUFFIX := redbrick+$(WITH_VERSION_SUFFIX)
 endif
 endif
+
+ifneq ($(WITH_DEDICATED),no)
+ifeq ($(WITH_VERSION_SUFFIX),no)
+	override WITH_VERSION_SUFFIX := dedicated
+else
+	override WITH_VERSION_SUFFIX := dedicated+$(WITH_VERSION_SUFFIX)
+endif
+endif
+
+
 
 ifeq ($(PLATFORM),Linux)
 ifeq ($(WITH_BRICKLET),check)
@@ -349,6 +364,11 @@ ifneq ($(WITH_RED_BRICK),no)
 	SOURCES_DAEMONLIB += ../daemonlib/gpio_red.c \
 	                     ../daemonlib/red_i2c_eeprom.c \
 	                     ../daemonlib/red_led.c
+endif
+
+ifneq ($(WITH_DEDICATED),no)
+	SOURCES_BRICKD += redapid.c \
+	                  red_usb_gadget.c
 endif
 
 ifeq ($(WITH_LIBUSB_DLOPEN),yes)
@@ -571,6 +591,10 @@ ifneq ($(WITH_RED_BRICK),no)
 	override CFLAGS += -DBRICKD_WITH_RED_BRICK=${WITH_RED_BRICK}
 endif
 
+ifneq ($(WITH_DEDICATED),no)
+	override CFLAGS += -DBRICKD_WITH_DEDICATED
+endif
+
 ifeq ($(WITH_BRICKLET),yes)
 	override CFLAGS += -DBRICKD_WITH_BRICKLET
 endif
@@ -605,6 +629,7 @@ $(info - debug:                      $(WITH_DEBUG))
 $(info - static:                     $(WITH_STATIC))
 $(info - gprof:                      $(WITH_GPROF))
 $(info - red-brick:                  $(WITH_RED_BRICK))
+$(info - dedicated:                  $(WITH_DEDICATED))
 $(info - bricklet:                   $(WITH_BRICKLET))
 $(info - unknown-libusb-api-version: $(WITH_UNKNOWN_LIBUSB_API_VERSION))
 $(info - mesh-single-root-node:      $(WITH_MESH_SINGLE_ROOT_NODE))

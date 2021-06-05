@@ -53,6 +53,10 @@
 	#include "red_usb_gadget.h"
     #include "red_extension.h"
 #endif
+#ifdef BRICKD_WITH_DEDICATED
+	#include "redapid.h"
+//	#include "red_usb_gadget.h"
+#endif
 #ifdef BRICKD_WITH_LIBUDEV
 	#include "udev.h"
 #endif
@@ -449,7 +453,7 @@ int main(int argc, char **argv) {
 	}
 
 	phase = 11;
-
+    
 #ifdef BRICKD_WITH_RED_BRICK
 	if (gpio_red_init() < 0) {
 		goto cleanup;
@@ -485,6 +489,20 @@ int main(int argc, char **argv) {
 	red_led_set_trigger(RED_LED_RED, config_get_option_value("led_trigger.red")->symbol);
 #endif
 
+#ifdef BRICKD_WITH_DEDICATED
+	if (redapid_init() < 0) {
+		goto cleanup;
+	}
+
+	phase = 13;
+
+//	if (red_usb_gadget_init() < 0) {
+//		goto cleanup;
+//	}
+
+//	phase = 16;
+#endif
+
 #ifdef BRICKD_WITH_BRICKLET
 
 	if (bricklet_init() < 0) {
@@ -502,6 +520,12 @@ int main(int argc, char **argv) {
 	hardware_announce_disconnect();
 	network_announce_red_brick_disconnect();
 	red_usb_gadget_announce_red_brick_disconnect();
+#endif
+
+#ifdef BRICKD_WITH_DEDICATED
+	//hardware_announce_disconnect();
+	network_announce_dedicated_disconnect();
+//	red_usb_gadget_announce_dedicated_disconnect();
 #endif
 
 	exit_code = EXIT_SUCCESS;
@@ -533,6 +557,16 @@ cleanup:
 
 	case 12:
 		//gpio_red_exit();
+#endif
+#ifdef BRICKD_WITH_DEDICATED
+		// fall through
+
+//	case 16:
+//		red_usb_gadget_exit();
+		// fall through
+
+	case 13:
+		redapid_exit();
 #endif
 		// fall through
 

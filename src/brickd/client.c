@@ -38,6 +38,9 @@
 #ifdef BRICKD_WITH_RED_BRICK
 	#include "red_usb_gadget.h"
 #endif
+#ifdef BRICKD_WITH_DEDICATED
+	#include "red_usb_gadget.h"
+#endif
 #include "zombie.h"
 
 static LogSource _log_source = LOG_SOURCE_INITIALIZER;
@@ -547,6 +550,48 @@ void client_send_red_brick_enumerate(Client *client, EnumerationType type) {
 	u.response.firmware_version[1] = _redapid_version[1];
 	u.response.firmware_version[2] = _redapid_version[2];
 	u.response.device_identifier = uint16_to_le(RED_BRICK_DEVICE_IDENTIFIER);
+	u.response.enumeration_type = type;
+
+#ifdef DAEMONLIB_WITH_PACKET_TRACE
+	u.packet.trace_id = packet_get_next_response_trace_id();
+#endif
+
+	packet_add_trace(&u.packet);
+	client_dispatch_response(client, NULL, &u.packet, true, false);
+}
+
+#endif
+
+#ifdef BRICKD_WITH_DEDICATED
+
+void client_send_dedicated_enumerate(Client *client, EnumerationType type) {
+	union {
+		EnumerateCallback response;
+		Packet packet;
+	} u;
+
+	//uint32_t uid = red_usb_gadget_get_uid(); // always little endian
+	uint32_t uid = dedicated_uid();
+
+	memset(&u.packet, 0, sizeof(u.packet));
+
+	u.response.header.uid = uid;
+	u.response.header.length = sizeof(u.response);
+	u.response.header.function_id = CALLBACK_ENUMERATE;
+	packet_header_set_sequence_number(&u.response.header, 0);
+	packet_header_set_response_expected(&u.response.header, true);
+
+	base58_encode(u.response.uid, uint32_from_le(uid));
+	u.response.connected_uid[0] = '0';
+//	u.response.position = '0';
+	u.response.position = 'X';
+	u.response.hardware_version[0] = 0; // Dedicated processor reported as version 0.0.0
+	u.response.hardware_version[1] = 0;
+	u.response.hardware_version[2] = 0;
+	u.response.firmware_version[0] = _redapid_version[0];
+	u.response.firmware_version[1] = _redapid_version[1];
+	u.response.firmware_version[2] = _redapid_version[2];
+	u.response.device_identifier = uint16_to_le(RED_BRICK_DEVICE_IDENTIFIER);  // Separate ID for Dedicated processor?
 	u.response.enumeration_type = type;
 
 #ifdef DAEMONLIB_WITH_PACKET_TRACE

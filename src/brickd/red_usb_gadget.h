@@ -29,7 +29,12 @@
 int red_usb_gadget_init(void);
 void red_usb_gadget_exit(void);
 
+#ifdef BRICKD_WITH_RED_BRICK
 void red_usb_gadget_announce_red_brick_disconnect(void);
+#endif
+#ifdef BRICKD_WITH_DEDICATED
+void red_usb_gadget_announce_dedicated_disconnect(void);
+#endif
 
 uint32_t red_usb_gadget_get_uid(void);
 

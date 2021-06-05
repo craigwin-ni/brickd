@@ -29,6 +29,7 @@
 #include <daemonlib/queue.h>
 #include <daemonlib/socket.h>
 #include <daemonlib/timer.h>
+#include <daemonlib/utils.h>
 
 #include "redapid.h"
 
@@ -173,7 +174,13 @@ static int redapid_dispatch_request(Stack *stack, Packet *request,
 	(void)recipient;
 
 	if (request->header.function_id == FUNCTION_ENUMERATE) {
+
+#if BRICKD_WITH_RED_BRICK
 		uid = red_usb_gadget_get_uid();
+#endif
+#ifdef BRICKD_WITH_DEDICATED
+        uid = dedicated_uid();
+#endif
 
 		log_packet_debug("Received enumerate request, sending enumerate-available callback for RED Brick [%s]",
 		                 base58_encode(base58, uint32_from_le(uid)));
@@ -190,7 +197,12 @@ static int redapid_dispatch_request(Stack *stack, Packet *request,
 		base58_encode(enumerate_callback.uid, uint32_from_le(uid));
 		enumerate_callback.connected_uid[0] = '0';
 		enumerate_callback.position = '0';
+	#ifdef BRICKD_WITH_RED_BRICK
 		enumerate_callback.hardware_version[0] = 1; // FIXME
+	#endif
+	#ifdef BRICKD_WITH_DEDICATED
+		enumerate_callback.hardware_version[0] = 0; // FIXME
+	#endif
 		enumerate_callback.hardware_version[1] = 0;
 		enumerate_callback.hardware_version[2] = 0;
 		enumerate_callback.firmware_version[0] = _redapid_version[0];

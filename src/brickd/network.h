@@ -44,4 +44,10 @@ void network_announce_red_brick_disconnect(void);
 
 #endif
 
+#ifdef BRICKD_WITH_DEDICATED
+
+void network_announce_dedicated_disconnect(void);
+
+#endif
+
 #endif // BRICKD_NETWORK_H
